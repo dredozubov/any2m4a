@@ -3,8 +3,12 @@ import subprocess
 import os
 import shlex
 import glob
+import logging
+import re
 
 from itertools import chain
+
+logging.basicConfig(filename='any2m4a_error.log', level=logging.INFO)
 
 
 def shell_escape(s):
@@ -34,7 +38,14 @@ def embed_cover_art(cdir):
     globs = chain.from_iterable(
             (glob.glob('%s/%s' % (cdir, option)) for option in options)
             )
-    gl = next(globs)
+    try:
+        gl = next(globs)
+    except StopIteration:
+        gl = None
+    except re.error:
+        gl = None
+        logging.error('Cover art embedding failed for %s' % cdir)
+
     if gl:
         cover_filename = gl
         audio_files = glob.iglob('%s/*.m4a' % cdir)
@@ -77,14 +88,23 @@ def lossless2alaccue(paths, delete_processed=False):
             for filename in filenames:
                 absfilename = '%s/%s' % (cdir, filename)
                 successful = convertwcue(absfilename, cfile, cdir)
+
                 print 'successful: ', successful
-                embed_cover_art(cdir)
-                if successful and delete_processed:
-                    print 'removing unused file: %s/%s' % (cdir, filename)
-                    os.remove('%s/%s' % (cdir, filename))
+
+                if successful:
+                    embed_cover_art(cdir)
+                    if delete_processed:
+                        print 'removing unused file: %s/%s' % (cdir, filename)
+                        os.remove('%s/%s' % (cdir, filename))
+                else:
+                    logging.error(
+                    '%s - xld completed with errors, processed file still in place: \n%s'  # noqa
+                    % (absfilename, cfile))
+
                 print
                 break
     print 'complete!'
+
 
 paths = sys.argv[1:] or '.'
 
