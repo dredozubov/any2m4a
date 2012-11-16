@@ -2,6 +2,9 @@ import sys
 import subprocess
 import os
 import shlex
+import glob
+
+from itertools import chain
 
 
 def shell_escape(s):
@@ -22,6 +25,28 @@ def convertwcue(filename, cuefile, cdir):
 
 def convertdirect(filename, cdir):
     filename, cdir = [shell_escape(d) for d in (filename, cdir)]
+
+
+def embed_cover_art(cdir):
+    options = ['folder.png', 'folder.jpg', 'cover.png', 'cover.jpg',
+            'front.png', 'front.jpg', 'f.png', 'f.jpg', 'F.png', 'F.jpg',
+            '*.png', '*.jpg']
+    globs = chain.from_iterable(
+            (glob.glob('%s/%s' % (cdir, option)) for option in options)
+            )
+    gl = next(globs)
+    if gl:
+        cover_filename = gl
+        audio_files = glob.iglob('%s/*.m4a' % cdir)
+        for audio_file in audio_files:
+            command = "mp4art --add '%s' '%s'" % (cover_filename, audio_file)
+            print 'embedding cover art: %s' % command
+            p = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
+            for line in p.stdout:
+                print line.replace('\n', '')
+        return True
+    else:
+        return False
 
 
 def lossless2alaccue(paths, delete_processed=False):
@@ -53,6 +78,7 @@ def lossless2alaccue(paths, delete_processed=False):
                 absfilename = '%s/%s' % (cdir, filename)
                 successful = convertwcue(absfilename, cfile, cdir)
                 print 'successful: ', successful
+                embed_cover_art(cdir)
                 if successful and delete_processed:
                     print 'removing unused file: %s' % filename
                     os.remove(filename)
