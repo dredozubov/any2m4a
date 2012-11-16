@@ -80,12 +80,12 @@ def lossless2alaccue(paths, delete_processed=False):
                 print 'successful: ', successful
                 embed_cover_art(cdir)
                 if successful and delete_processed:
-                    print 'removing unused file: %s' % filename
-                    os.remove(filename)
+                    print 'removing unused file: %s/%s' % (cdir, filename)
+                    os.remove('%s/%s' % (cdir, filename))
                 print
                 break
     print 'complete!'
 
 paths = sys.argv[1:] or '.'
 
-lossless2alaccue(paths, delete_processed=False)
+lossless2alaccue(paths, delete_processed=True)
