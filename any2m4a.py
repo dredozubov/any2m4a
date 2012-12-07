@@ -32,12 +32,16 @@ def convertdirect(filename, cdir):
 
 
 def embed_cover_art(cdir):
-    options = ['folder.png', 'folder.jpg', 'cover.png', 'cover.jpg',
-            'front.png', 'front.jpg', 'f.png', 'f.jpg', 'F.png', 'F.jpg',
+    options = ['folder.png', 'folder.jpg', 'Folder.jpg', 'Folder.png',
+            'cover.png', 'cover.jpg',
+            'front.png', 'front.jpg', 'Front.jpg', 'Front.png',
+            'f.png', 'f.jpg', 'F.png', 'F.jpg',
+            'f*.png', 'F*.png', 'f*.jpg', 'F*.png',
             '*.png', '*.jpg']
     globs = chain.from_iterable(
             (glob.glob('%s/%s' % (cdir, option)) for option in options)
             )
+
     try:
         gl = next(globs)
     except StopIteration:
@@ -63,7 +67,7 @@ def embed_cover_art(cdir):
 def lossless2alaccue(paths, delete_processed=False):
     cue_files = []
     for path in paths:
-        command = 'find -s %s -regex .*\\.cue$' % path
+        command = "find -s %s -name '*.cue' -o -name '*.CUE'" % path
         p = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
         out, err = p.communicate()
 
@@ -74,11 +78,17 @@ def lossless2alaccue(paths, delete_processed=False):
     cue_dirs = [os.path.dirname(p) for p in cue_files[:-1]]
 
     cues = zip(cue_files, cue_dirs)
+    print 'cues: ', cues
 
     total = len(cues)
 
     for num, (cfile, cdir) in enumerate(cues, 1):
         print 'processing: %d of %d' % (num, total)
+
+        if not cfile:
+            logging.info('skipping broken cue file in dir %s' % cdir)
+            continue
+
         with open(cfile, 'r') as fd:
             files = [x for x in fd.readlines()
                     if x.startswith('FILE') or x.startswith('file')]
@@ -106,6 +116,7 @@ def lossless2alaccue(paths, delete_processed=False):
     print 'complete!'
 
 
-paths = sys.argv[1:] or '.'
+if __name__ == "__main__":
+    paths = sys.argv[1:] or '.'
 
-lossless2alaccue(paths, delete_processed=True)
+    lossless2alaccue(paths, delete_processed=True)
