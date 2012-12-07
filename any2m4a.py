@@ -119,4 +119,4 @@ def lossless2alaccue(paths, delete_processed=False):
 if __name__ == "__main__":
     paths = sys.argv[1:] or '.'
 
-    lossless2alaccue(paths, delete_processed=True)
+    lossless2alaccue(paths, delete_processed=False)
